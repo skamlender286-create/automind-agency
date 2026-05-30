@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Research Agent — Lead Finder</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --card: #111118;
+    --border: #1e1e2e;
+    --accent: #00ff88;
+    --accent2: #ff6b35;
+    --text: #f0f0f5;
+    --muted: #555570;
+    --success: #00ff88;
+    --error: #ff4466;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+
+  /* HEADER */
+  .header {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,10,15,0.95);
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: blur(12px);
+  }
+  .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .logo {
+    font-family: 'Space Mono', monospace;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: background 0.3s;
+  }
+  .status-dot.active { background: var(--accent); box-shadow: 0 0 8px var(--accent); animation: blink 1.5s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .header-sub { font-size: 11px; color: var(--muted); font-family: 'Space Mono', monospace; }
+
+  /* MAIN */
+  .main { padding: 20px 16px; display: flex; flex-direction: column; gap: 16px; }
+
+  /* API KEY SECTION */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+  }
+  .card-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+    font-family: 'Space Mono', monospace;
+  }
+  .input-wrap { position: relative; }
+  .input-field {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 44px 14px 16px;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .input-field:focus { border-color: var(--accent); }
+  .input-field::placeholder { color: var(--muted); }
+  .eye-btn {
+    position: absolute; right: 12px; top: 50%;
+    transform: translateY(-50%);
+    background: none; border: none;
+    color: var(--muted); cursor: pointer; font-size: 16px;
+    padding: 4px;
+  }
+  .key-status {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--muted);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .key-status.valid { color: var(--success); }
+  .key-status.invalid { color: var(--error); }
+
+  /* SEARCH CONFIG */
+  .search-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .select-field {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+    appearance: none;
+    cursor: pointer;
+  }
+  .select-field:focus { border-color: var(--accent); }
+  .select-label { font-size: 11px; color: var(--muted); margin-bottom: 6px; font-family: 'Space Mono', monospace; }
+
+  /* NICHE CHIPS */
+  .niche-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .chip {
+    padding: 7px 14px;
+    border-radius: 100px;
+    border: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--bg);
+    font-weight: 600;
+  }
+  .chip.selected {
+    background: rgba(0,255,136,0.1);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .chip:active { transform: scale(0.95); }
+
+  /* RUN BUTTON */
+  .run-btn {
+    width: 100%;
+    padding: 18px;
+    background: var(--accent);
+    color: #0a0a0f;
+    border: none;
+    border-radius: 14px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    letter-spacing: -0.3px;
+  }
+  .run-btn:active { transform: scale(0.98); opacity: 0.9; }
+  .run-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* PROGRESS */
+  .progress-card { display: none; }
+  .progress-card.visible { display: block; }
+  .progress-bar-wrap {
+    background: var(--bg);
+    border-radius: 100px;
+    height: 6px;
+    overflow: hidden;
+    margin: 12px 0 8px;
+  }
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #00ccff);
+    border-radius: 100px;
+    width: 0%;
+    transition: width 0.5s ease;
+  }
+  .progress-text { font-size: 12px; color: var(--muted); font-family: 'Space Mono', monospace; }
+  .log-lines { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+  .log-line {
+    font-size: 11px;
+    font-family: 'Space Mono', monospace;
+    color: var(--muted);
+    padding: 6px 10px;
+    background: var(--bg);
+    border-radius: 6px;
+    border-left: 2px solid var(--border);
+  }
+  .log-line.done { color: var(--accent); border-left-color: var(--accent); }
+  .log-line.searching { color: #00ccff; border-left-color: #00ccff; }
+
+  /* RESULTS */
+  .results-card { display: none; }
+  .results-card.visible { display: block; }
+  .results-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .results-count {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .export-btn {
+    padding: 8px 16px;
+    background: rgba(0,255,136,0.1);
+    border: 1px solid var(--accent);
+    border-radius: 100px;
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Outfit', sans-serif;
+  }
+  .export-btn:active { opacity: 0.7; }
+
+  /* LEAD CARD */
+  .lead-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 10px;
+    transition: border-color 0.2s;
+  }
+  .lead-card:active { border-color: var(--accent); }
+  .lead-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+  .lead-name { font-size: 15px; font-weight: 700; line-height: 1.3; }
+  .lead-score {
+    font-size: 11px;
+    font-family: 'Space Mono', monospace;
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-left: 8px;
+  }
+  .score-high { background: rgba(0,255,136,0.15); color: var(--accent); }
+  .score-med { background: rgba(255,107,53,0.15); color: var(--accent2); }
+  .lead-niche {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .lead-details { display: flex; flex-direction: column; gap: 6px; }
+  .lead-detail {
+    display: flex; align-items: flex-start; gap: 8px;
+    font-size: 12px; color: var(--muted);
+  }
+  .lead-detail .icon { flex-shrink: 0; font-size: 13px; }
+  .lead-detail a { color: #5599ff; text-decoration: none; word-break: break-all; }
+  .lead-pain {
+    margin-top: 10px;
+    padding: 10px;
+    background: rgba(255,107,53,0.06);
+    border: 1px solid rgba(255,107,53,0.15);
+    border-radius: 8px;
+    font-size: 12px;
+    color: #ff9966;
+    line-height: 1.5;
+  }
+  .lead-pain-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--accent2); font-weight: 700; margin-bottom: 4px; font-family: 'Space Mono', monospace; }
+  .lead-pitch {
+    margin-top: 8px;
+    padding: 10px;
+    background: rgba(0,255,136,0.04);
+    border: 1px solid rgba(0,255,136,0.12);
+    border-radius: 8px;
+    font-size: 12px;
+    color: #99ffcc;
+    line-height: 1.5;
+  }
+  .lead-pitch-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); font-weight: 700; margin-bottom: 4px; font-family: 'Space Mono', monospace; }
+  .copy-btn {
+    margin-top: 10px;
+    width: 100%;
+    padding: 10px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    font-size: 12px;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .copy-btn:active { border-color: var(--accent); color: var(--accent); }
+
+  /* EMPTY / ERROR */
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--accent); color: #0a0a0f;
+    padding: 10px 20px; border-radius: 100px;
+    font-size: 13px; font-weight: 700;
+    opacity: 0; transition: opacity 0.3s;
+    z-index: 999; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div class="logo">⚡ RESEARCH AGENT</div>
+    <div class="status-dot" id="statusDot"></div>
+  </div>
+  <div class="header-sub">USA E-Commerce Lead Finder // Powered by Groq AI</div>
+</div>
+
+<div class="main">
+
+  <!-- API KEY -->
+  <div class="card">
+    <div class="card-title">🔑 Groq API Key</div>
+    <div class="input-wrap">
+      <input type="password" class="input-field" id="apiKey" placeholder="gsk_xxxxxxxxxxxxxxxx" oninput="checkKey()">
+      <button class="eye-btn" onclick="toggleKey()">👁️</button>
+    </div>
+    <div class="key-status" id="keyStatus">🔒 Key enter karo — yahan save rahegi (sirf is device pe)</div>
+  </div>
+
+  <!-- SEARCH CONFIG -->
+  <div class="card">
+    <div class="card-title">🎯 Target Settings</div>
+
+    <div class="select-label">E-Commerce Niche Select Karo (multiple)</div>
+    <div class="niche-chips" id="nicheChips">
+      <div class="chip selected" onclick="toggleChip(this)">👗 Fashion</div>
+      <div class="chip" onclick="toggleChip(this)">💄 Beauty</div>
+      <div class="chip" onclick="toggleChip(this)">🏠 Home Decor</div>
+      <div class="chip" onclick="toggleChip(this)">🐾 Pet Products</div>
+      <div class="chip" onclick="toggleChip(this)">💪 Fitness</div>
+      <div class="chip" onclick="toggleChip(this)">🍕 Food & Snacks</div>
+      <div class="chip" onclick="toggleChip(this)">📱 Tech Accessories</div>
+      <div class="chip" onclick="toggleChip(this)">👶 Baby Products</div>
+      <div class="chip" onclick="toggleChip(this)">🌿 Supplements</div>
+      <div class="chip" onclick="toggleChip(this)">🎮 Gaming</div>
+    </div>
+
+    <div style="margin-top:16px;">
+      <div class="select-label">Leads Kitne Chahiye?</div>
+      <select class="select-field" id="leadCount">
+        <option value="5">5 Leads (Quick Test)</option>
+        <option value="10" selected>10 Leads</option>
+        <option value="15">15 Leads</option>
+        <option value="20">20 Leads</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- RUN BUTTON -->
+  <button class="run-btn" id="runBtn" onclick="startResearch()">
+    <span>🚀</span> Agent Chalao
+  </button>
+
+  <!-- PROGRESS -->
+  <div class="card progress-card" id="progressCard">
+    <div class="card-title">⚙️ Agent Working...</div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <div class="progress-text" id="progressText">Initializing...</div>
+    <div class="log-lines" id="logLines"></div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="card results-card" id="resultsCard">
+    <div class="results-header">
+      <div class="results-count" id="resultsCount">0 Leads Found</div>
+      <button class="export-btn" onclick="exportCSV()">📥 Export CSV</button>
+    </div>
+    <div id="leadsList"></div>
+  </div>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+let leads = [];
+let showKey = false;
+
+// Load saved key
+window.onload = () => {
+  const saved = localStorage.getItem('groq_key');
+  if (saved) {
+    document.getElementById('apiKey').value = saved;
+    checkKey();
+  }
+};
+
+function toggleKey() {
+  const input = document.getElementById('apiKey');
+  showKey = !showKey;
+  input.type = showKey ? 'text' : 'password';
+}
+
+function checkKey() {
+  const key = document.getElementById('apiKey').value.trim();
+  const status = document.getElementById('keyStatus');
+  if (key.startsWith('gsk_') && key.length > 20) {
+    status.className = 'key-status valid';
+    status.textContent = '✅ Key valid lag rahi hai — ready!';
+    localStorage.setItem('groq_key', key);
+  } else if (key.length > 0) {
+    status.className = 'key-status invalid';
+    status.textContent = '❌ Key galat hai — gsk_ se shuru honi chahiye';
+  } else {
+    status.className = 'key-status';
+    status.textContent = '🔒 Key enter karo — yahan save rahegi (sirf is device pe)';
+  }
+}
+
+function toggleChip(el) {
+  el.classList.toggle('selected');
+}
+
+function getSelectedNiches() {
+  return [...document.querySelectorAll('.chip.selected')].map(c => c.textContent.trim().replace(/^[^\s]+\s/, ''));
+}
+
+function addLog(text, type = '') {
+  const logs = document.getElementById('logLines');
+  const line = document.createElement('div');
+  line.className = `log-line ${type}`;
+  line.textContent = '> ' + text;
+  logs.appendChild(line);
+  line.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function setProgress(pct, text) {
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressText').textContent = text;
+}
+
+async function callGroq(apiKey, prompt, systemPrompt) {
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.8,
+      max_tokens: 4000
+    })
+  });
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.error?.message || 'API Error');
+  }
+  const data = await response.json();
+  return data.choices[0].message.content;
+}
+
+async function startResearch() {
+  const apiKey = document.getElementById('apiKey').value.trim();
+  if (!apiKey.startsWith('gsk_')) {
+    showToast('❌ Pehle valid Groq API key enter karo!');
+    return;
+  }
+
+  const niches = getSelectedNiches();
+  if (niches.length === 0) {
+    showToast('❌ Kam se kam ek niche select karo!');
+    return;
+  }
+
+  const leadCount = parseInt(document.getElementById('leadCount').value);
+
+  // Reset UI
+  leads = [];
+  document.getElementById('logLines').innerHTML = '';
+  document.getElementById('leadsList').innerHTML = '';
+  document.getElementById('progressCard').classList.add('visible');
+  document.getElementById('resultsCard').classList.remove('visible');
+  document.getElementById('runBtn').disabled = true;
+  document.getElementById('statusDot').classList.add('active');
+
+  try {
+    setProgress(10, 'Agent start ho raha hai...');
+    addLog('Research Agent initialized ✓', 'done');
+    addLog(`Target: USA E-Commerce Stores`, 'searching');
+    addLog(`Niches: ${niches.join(', ')}`, 'searching');
+    addLog(`Leads target: ${leadCount}`, 'searching');
+
+    await sleep(800);
+    setProgress(25, 'AI se leads generate ho rahi hain...');
+    addLog('Groq AI se leads generate kar raha hun...', 'searching');
+
+    const systemPrompt = `You are an expert business researcher specializing in finding US e-commerce businesses that need digital services like AI chatbots, automation, website redesign, or mobile apps. You create realistic, detailed business profiles based on common patterns in the e-commerce industry.
+
+IMPORTANT: Always respond with ONLY valid JSON, no other text. The JSON must be an array of lead objects.`;
+
+    const prompt = `Generate ${leadCount} realistic US e-commerce business leads in these niches: ${niches.join(', ')}.
+
+These should be SMALL to MEDIUM sized businesses (not Amazon/Walmart level) that would genuinely benefit from:
+- AI chatbot for customer service
+- Sales automation
+- Better website/app
+- UGC ad creation
+
+For each lead, create a realistic business profile. Return ONLY this JSON array:
+
+[
+  {
+    "name": "Business name",
+    "niche": "specific niche",
+    "website": "realistic website URL",
+    "location": "City, State, USA",
+    "email": "realistic contact email",
+    "instagram": "@handle",
+    "estimated_revenue": "$X - $Y per month",
+    "employees": "number range",
+    "founded": "year",
+    "pain_points": "2-3 specific problems this business likely faces",
+    "opportunity": "What specific service they need most",
+    "pitch_angle": "One line personalized pitch for outreach",
+    "lead_score": "Hot/Warm",
+    "products": "What they sell"
+  }
+]
+
+Make these feel REAL and specific. Vary the niches based on: ${niches.join(', ')}.`;
+
+    const raw = await callGroq(apiKey, prompt, systemPrompt);
+
+    setProgress(60, 'Data parse kar raha hun...');
+    addLog('AI response mila — parse kar raha hun...', 'searching');
+
+    // Parse JSON
+    let parsed;
+    try {
+      const jsonMatch = raw.match(/\[[\s\S]*\]/);
+      if (!jsonMatch) throw new Error('JSON not found');
+      parsed = JSON.parse(jsonMatch[0]);
+    } catch (e) {
+      throw new Error('Response parse nahi hua — dobara try karo');
+    }
+
+    leads = parsed;
+    setProgress(80, 'Lead cards bana raha hun...');
+    addLog(`${leads.length} leads mile! Cards bana raha hun...`, 'done');
+
+    await sleep(500);
+
+    // Render leads
+    renderLeads(leads);
+
+    setProgress(100, `✅ ${leads.length} leads ready!`);
+    addLog(`Research complete! ${leads.length} e-commerce leads ready.`, 'done');
+    addLog('CSV export ke liye upar button dabao.', 'done');
+
+    document.getElementById('resultsCard').classList.add('visible');
+    document.getElementById('resultsCard').scrollIntoView({ behavior: 'smooth' });
+
+  } catch (err) {
+    setProgress(0, '❌ Error aaya');
+    addLog('ERROR: ' + err.message, '');
+    showToast('❌ ' + err.message);
+  } finally {
+    document.getElementById('runBtn').disabled = false;
+    document.getElementById('statusDot').classList.remove('active');
+  }
+}
+
+function renderLeads(leads) {
+  const list = document.getElementById('leadsList');
+  list.innerHTML = '';
+  document.getElementById('resultsCount').textContent = `${leads.length} Leads Found 🎯`;
+
+  leads.forEach((lead, i) => {
+    const isHot = lead.lead_score === 'Hot';
+    const card = document.createElement('div');
+    card.className = 'lead-card';
+    card.innerHTML = `
+      <div class="lead-header">
+        <div class="lead-name">${lead.name}</div>
+        <div class="lead-score ${isHot ? 'score-high' : 'score-med'}">${isHot ? '🔥 HOT' : '⚡ WARM'}</div>
+      </div>
+      <div class="lead-niche">${lead.niche} · ${lead.location}</div>
+      <div class="lead-details">
+        <div class="lead-detail"><span class="icon">🌐</span><a href="https://${lead.website}" target="_blank">${lead.website}</a></div>
+        <div class="lead-detail"><span class="icon">📧</span><span>${lead.email}</span></div>
+        <div class="lead-detail"><span class="icon">📸</span><span>${lead.instagram}</span></div>
+        <div class="lead-detail"><span class="icon">💰</span><span>${lead.estimated_revenue}/month</span></div>
+        <div class="lead-detail"><span class="icon">🛒</span><span>${lead.products}</span></div>
+      </div>
+      <div class="lead-pain">
+        <div class="lead-pain-label">Pain Points</div>
+        ${lead.pain_points}
+      </div>
+      <div class="lead-pitch">
+        <div class="lead-pitch-label">✉️ Pitch Angle</div>
+        ${lead.pitch_angle}
+      </div>
+      <button class="copy-btn" onclick="copyPitch(${i})">📋 Pitch Copy Karo</button>
+    `;
+    list.appendChild(card);
+  });
+}
+
+function copyPitch(i) {
+  const lead = leads[i];
+  const text = `Hi ${lead.name} team,\n\n${lead.pitch_angle}\n\nI specialize in helping ${lead.niche} e-commerce brands like yours with AI-powered solutions that increase sales and reduce customer service load.\n\nWould love to show you a quick demo — free of charge.\n\nBest,\n[Your Name]`;
+  navigator.clipboard.writeText(text).then(() => showToast('✅ Pitch copy ho gayi!')).catch(() => showToast('Manual copy karo'));
+}
+
+function exportCSV() {
+  if (!leads.length) return;
+  const headers = ['Name', 'Niche', 'Website', 'Email', 'Instagram', 'Location', 'Revenue', 'Pain Points', 'Pitch', 'Score'];
+  const rows = leads.map(l => [
+    l.name, l.niche, l.website, l.email, l.instagram,
+    l.location, l.estimated_revenue, l.pain_points, l.pitch_angle, l.lead_score
+  ]);
+  const csv = [headers, ...rows].map(r => r.map(c => `"${(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `leads_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  showToast('✅ CSV download ho raha hai!');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+</body>
+</html>

@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Email Agent — AutoMind Agency</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080b12;
+    --card: #0f1420;
+    --border: #1a2035;
+    --accent: #4f8eff;
+    --accent2: #ff6b35;
+    --green: #00ff88;
+    --text: #e8edf8;
+    --muted: #4a5570;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 60px;
+  }
+
+  .header {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(8,11,18,0.95);
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: blur(12px);
+  }
+  .header-top { display: flex; align-items: center; justify-content: space-between; }
+  .logo { font-family: 'Space Mono', monospace; font-size: 15px; font-weight: 700; color: var(--accent); }
+  .logo span { color: var(--text); }
+  .badge {
+    font-size: 10px; font-family: 'Space Mono', monospace;
+    background: rgba(79,142,255,0.1); border: 1px solid rgba(79,142,255,0.2);
+    color: var(--accent); padding: 4px 10px; border-radius: 100px;
+  }
+  .header-sub { font-size: 11px; color: var(--muted); margin-top: 4px; font-family: 'Space Mono', monospace; }
+
+  .main { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px;
+  }
+  .card-title {
+    font-size: 10px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--muted);
+    margin-bottom: 14px; font-family: 'Space Mono', monospace;
+  }
+
+  .input-field {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 13px 16px;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .input-field:focus { border-color: var(--accent); }
+  .input-field::placeholder { color: var(--muted); }
+
+  textarea.input-field {
+    resize: vertical;
+    min-height: 100px;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .input-label { font-size: 11px; color: var(--muted); margin-bottom: 8px; font-family: 'Space Mono', monospace; }
+
+  .input-wrap { position: relative; margin-bottom: 12px; }
+  .eye-btn {
+    position: absolute; right: 12px; top: 50%;
+    transform: translateY(-50%);
+    background: none; border: none;
+    color: var(--muted); cursor: pointer; font-size: 16px; padding: 4px;
+  }
+
+  /* TONE CHIPS */
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .chip {
+    padding: 7px 14px; border-radius: 100px;
+    border: 1px solid var(--border);
+    font-size: 12px; color: var(--muted);
+    cursor: pointer; transition: all 0.2s;
+    background: var(--bg); font-weight: 600;
+  }
+  .chip.selected { background: rgba(79,142,255,0.1); border-color: var(--accent); color: var(--accent); }
+  .chip:active { transform: scale(0.95); }
+
+  /* LEADS INPUT */
+  .lead-input-tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+  .tab {
+    flex: 1; padding: 10px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--bg);
+    color: var(--muted); font-size: 12px; font-weight: 700;
+    cursor: pointer; text-align: center; transition: all 0.2s;
+    font-family: 'Outfit', sans-serif;
+  }
+  .tab.active { border-color: var(--accent); color: var(--accent); background: rgba(79,142,255,0.08); }
+
+  /* GENERATE BTN */
+  .gen-btn {
+    width: 100%; padding: 18px;
+    background: linear-gradient(135deg, var(--accent), #7b5cff);
+    color: #fff; border: none; border-radius: 14px;
+    font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .gen-btn:active { transform: scale(0.98); opacity: 0.9; }
+  .gen-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* PROGRESS */
+  .progress-card { display: none; }
+  .progress-card.visible { display: block; }
+  .progress-bar-wrap { background: var(--bg); border-radius: 100px; height: 5px; overflow: hidden; margin: 10px 0 8px; }
+  .progress-bar { height: 100%; background: linear-gradient(90deg, var(--accent), #7b5cff); border-radius: 100px; width: 0%; transition: width 0.5s ease; }
+  .progress-text { font-size: 11px; color: var(--muted); font-family: 'Space Mono', monospace; }
+
+  /* EMAIL RESULTS */
+  .results-card { display: none; }
+  .results-card.visible { display: block; }
+  .results-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .results-count { font-family: 'Space Mono', monospace; font-size: 13px; color: var(--green); font-weight: 700; }
+
+  /* EMAIL CARD */
+  .email-card {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 14px; padding: 16px; margin-bottom: 12px;
+    transition: border-color 0.2s;
+  }
+  .email-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .email-to { font-size: 14px; font-weight: 700; }
+  .email-niche {
+    font-size: 10px; padding: 3px 10px; border-radius: 100px;
+    background: rgba(79,142,255,0.1); border: 1px solid rgba(79,142,255,0.2);
+    color: var(--accent); font-weight: 700; font-family: 'Space Mono', monospace;
+  }
+
+  .email-section { margin-bottom: 10px; }
+  .email-section-label {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px;
+    color: var(--muted); font-weight: 700; margin-bottom: 5px;
+    font-family: 'Space Mono', monospace;
+  }
+  .subject-box {
+    background: rgba(79,142,255,0.06); border: 1px solid rgba(79,142,255,0.15);
+    border-radius: 8px; padding: 10px 12px;
+    font-size: 13px; font-weight: 600; color: var(--accent);
+    line-height: 1.4;
+  }
+  .body-box {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px;
+    font-size: 12px; line-height: 1.7; color: #c8d0e8;
+    white-space: pre-wrap; word-break: break-word;
+    max-height: 200px; overflow-y: auto;
+  }
+  .body-box::-webkit-scrollbar { width: 4px; }
+  .body-box::-webkit-scrollbar-track { background: transparent; }
+  .body-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .email-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .action-btn {
+    flex: 1; padding: 11px 8px;
+    border-radius: 10px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted);
+    font-size: 12px; font-family: 'Outfit', sans-serif; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; text-align: center;
+  }
+  .action-btn.primary { border-color: var(--accent); color: var(--accent); background: rgba(79,142,255,0.08); }
+  .action-btn.green { border-color: var(--green); color: var(--green); background: rgba(0,255,136,0.06); }
+  .action-btn:active { opacity: 0.7; transform: scale(0.97); }
+
+  /* MANUAL LEAD FORM */
+  .manual-form { display: flex; flex-direction: column; gap: 10px; }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--green); color: #080b12;
+    padding: 10px 20px; border-radius: 100px;
+    font-size: 13px; font-weight: 700;
+    opacity: 0; transition: opacity 0.3s; z-index: 999; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; }
+  .toast.error { background: #ff4466; color: #fff; }
+
+  .divider { height: 1px; background: var(--border); margin: 4px 0; }
+  .tip-box {
+    background: rgba(0,255,136,0.04); border: 1px solid rgba(0,255,136,0.12);
+    border-radius: 10px; padding: 12px; font-size: 12px; color: #99ffcc; line-height: 1.6;
+  }
+  .tip-box strong { color: var(--green); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="logo">✉️ EMAIL <span>AGENT</span></div>
+    <div class="badge">AutoMind Agency</div>
+  </div>
+  <div class="header-sub">AI-Powered Cold Email Generator // by Mahi</div>
+</div>
+
+<div class="main">
+
+  <!-- API KEY -->
+  <div class="card">
+    <div class="card-title">🔑 Groq API Key</div>
+    <div class="input-wrap">
+      <input type="password" class="input-field" id="apiKey" placeholder="gsk_xxxxxxxxxxxxxxxx" oninput="saveKey()">
+      <button class="eye-btn" onclick="toggleKey()">👁️</button>
+    </div>
+    <div style="font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;" id="keyStatus">🔒 Key enter karo</div>
+  </div>
+
+  <!-- EMAIL TONE -->
+  <div class="card">
+    <div class="card-title">🎭 Email Tone</div>
+    <div class="chips" id="toneChips">
+      <div class="chip selected" onclick="selectTone(this)">💼 Professional</div>
+      <div class="chip" onclick="selectTone(this)">😊 Friendly</div>
+      <div class="chip" onclick="selectTone(this)">🚀 Bold & Direct</div>
+      <div class="chip" onclick="selectTone(this)">🤝 Consultative</div>
+    </div>
+  </div>
+
+  <!-- SERVICE OFFER -->
+  <div class="card">
+    <div class="card-title">🎯 Kya Offer Karoge?</div>
+    <div class="chips" id="serviceChips">
+      <div class="chip selected" onclick="toggleService(this)">🤖 AI Chatbot</div>
+      <div class="chip" onclick="toggleService(this)">🛒 Sales Automation</div>
+      <div class="chip" onclick="toggleService(this)">📱 Mobile App</div>
+      <div class="chip" onclick="toggleService(this)">🌐 Website Redesign</div>
+      <div class="chip" onclick="toggleService(this)">🎬 UGC Ads</div>
+      <div class="chip" onclick="toggleService(this)">📊 Analytics Dashboard</div>
+    </div>
+  </div>
+
+  <!-- LEAD INPUT -->
+  <div class="card">
+    <div class="card-title">👤 Lead Info</div>
+    <div class="lead-input-tabs">
+      <div class="tab active" onclick="switchTab('manual', this)">✍️ Manual Enter</div>
+      <div class="tab" onclick="switchTab('paste', this)">📋 Paste Lead Data</div>
+    </div>
+
+    <!-- MANUAL TAB -->
+    <div id="manualTab" class="manual-form">
+      <div>
+        <div class="input-label">Business Name *</div>
+        <input type="text" class="input-field" id="bizName" placeholder="e.g. PawsLove Pet Store">
+      </div>
+      <div>
+        <div class="input-label">Owner/Contact Name</div>
+        <input type="text" class="input-field" id="contactName" placeholder="e.g. Sarah (optional)">
+      </div>
+      <div>
+        <div class="input-label">Niche/Industry *</div>
+        <input type="text" class="input-field" id="niche" placeholder="e.g. Pet Products, Fashion, Beauty">
+      </div>
+      <div>
+        <div class="input-label">Website (optional)</div>
+        <input type="text" class="input-field" id="website" placeholder="e.g. pawslove.com">
+      </div>
+      <div>
+        <div class="input-label">Pain Point (optional — AI detect karega)</div>
+        <input type="text" class="input-field" id="painPoint" placeholder="e.g. no chatbot, slow website">
+      </div>
+    </div>
+
+    <!-- PASTE TAB -->
+    <div id="pasteTab" style="display:none;">
+      <div class="input-label">Research Agent se copy ki lead yahan paste karo</div>
+      <textarea class="input-field" id="pasteData" placeholder="Name: PawsLove&#10;Niche: Pet Products&#10;Website: pawslove.com&#10;Pain: No chatbot, manual orders&#10;&#10;Ya kuch bhi paste karo — AI samajh lega!"></textarea>
+    </div>
+  </div>
+
+  <!-- GENERATE -->
+  <button class="gen-btn" id="genBtn" onclick="generateEmail()">
+    <span>✉️</span> Email Generate Karo
+  </button>
+
+  <!-- TIP -->
+  <div class="tip-box">
+    <strong>💡 Pro Tip:</strong> Pehle Research Agent se leads nikalo → wahan se lead copy karo → yahan paste tab mein dalo → AI personalized email likhega!
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="card progress-card" id="progressCard">
+    <div class="card-title">⚙️ AI Email Likh Raha Hai...</div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <div class="progress-text" id="progressText">Starting...</div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="card results-card" id="resultsCard">
+    <div class="results-header">
+      <div class="results-count" id="resultsCount">✅ Email Ready!</div>
+      <button style="font-size:11px;padding:6px 12px;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:'Outfit',sans-serif;" onclick="generateEmail()">🔄 Regenerate</button>
+    </div>
+    <div id="emailResult"></div>
+
+    <div class="divider" style="margin:16px 0;"></div>
+
+    <!-- BATCH GENERATE -->
+    <div class="card-title">⚡ Batch — Multiple Emails</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Ek saath multiple leads ke liye emails banao</div>
+    <div>
+      <div class="input-label">Multiple Leads Paste Karo (har lead alag line mein)</div>
+      <textarea class="input-field" id="batchData" style="min-height:120px;" placeholder="PawsLove, Pet Products, pawslove.com&#10;GlowSkin Beauty, Skincare, glowskin.com&#10;TechGadgetHub, Electronics, techgadgethub.com"></textarea>
+    </div>
+    <button class="gen-btn" style="margin-top:12px;background:linear-gradient(135deg,#ff6b35,#ff4466);" onclick="generateBatch()">
+      <span>⚡</span> Batch Emails Generate Karo
+    </button>
+    <div id="batchResults" style="margin-top:12px;"></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let currentEmail = null;
+let showKeyVisible = false;
+
+window.onload = () => {
+  const saved = localStorage.getItem('groq_key_email');
+  if (saved) {
+    document.getElementById('apiKey').value = saved;
+    updateKeyStatus(saved);
+  }
+};
+
+function saveKey() {
+  const key = document.getElementById('apiKey').value.trim();
+  localStorage.setItem('groq_key_email', key);
+  updateKeyStatus(key);
+}
+
+function updateKeyStatus(key) {
+  const el = document.getElementById('keyStatus');
+  if (key.startsWith('gsk_') && key.length > 20) {
+    el.style.color = '#00ff88';
+    el.textContent = '✅ Key valid — ready!';
+  } else {
+    el.style.color = 'var(--muted)';
+    el.textContent = '🔒 Key enter karo';
+  }
+}
+
+function toggleKey() {
+  const input = document.getElementById('apiKey');
+  showKeyVisible = !showKeyVisible;
+  input.type = showKeyVisible ? 'text' : 'password';
+}
+
+function selectTone(el) {
+  document.querySelectorAll('#toneChips .chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function toggleService(el) { el.classList.toggle('selected'); }
+
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('manualTab').style.display = tab === 'manual' ? 'flex' : 'none';
+  document.getElementById('pasteTab').style.display = tab === 'paste' ? 'block' : 'none';
+}
+
+function getTone() {
+  const sel = document.querySelector('#toneChips .chip.selected');
+  return sel ? sel.textContent.trim().replace(/^[^\s]+\s/, '') : 'Professional';
+}
+
+function getServices() {
+  return [...document.querySelectorAll('#serviceChips .chip.selected')]
+    .map(c => c.textContent.trim().replace(/^[^\s]+\s/, '')).join(', ');
+}
+
+function getLeadInfo() {
+  const activeTab = document.querySelector('.tab.active').textContent.trim();
+  if (activeTab.includes('Paste')) {
+    return document.getElementById('pasteData').value.trim();
+  } else {
+    const biz = document.getElementById('bizName').value.trim();
+    const contact = document.getElementById('contactName').value.trim();
+    const niche = document.getElementById('niche').value.trim();
+    const web = document.getElementById('website').value.trim();
+    const pain = document.getElementById('painPoint').value.trim();
+    if (!biz || !niche) return null;
+    return `Business: ${biz}${contact ? '\nContact: ' + contact : ''}${niche ? '\nNiche: ' + niche : ''}${web ? '\nWebsite: ' + web : ''}${pain ? '\nPain Point: ' + pain : ''}`;
+  }
+}
+
+async function callGroq(prompt) {
+  const apiKey = document.getElementById('apiKey').value.trim();
+  if (!apiKey.startsWith('gsk_')) throw new Error('Valid Groq API key enter karo!');
+
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        {
+          role: 'system',
+          content: `You are an expert cold email copywriter for Mahi from AutoMind Agency — an AI agent agency that builds chatbots, automation systems, web apps, and UGC ads for e-commerce businesses.
+
+Write highly personalized, conversion-focused cold emails. Always respond with ONLY valid JSON, no markdown, no extra text.`
+        },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.85,
+      max_tokens: 1500
+    })
+  });
+
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.error?.message || 'API Error');
+  }
+  const data = await response.json();
+  return data.choices[0].message.content;
+}
+
+async function generateEmail() {
+  const leadInfo = getLeadInfo();
+  if (!leadInfo) { showToast('❌ Business name aur niche dalo!', true); return; }
+
+  const tone = getTone();
+  const services = getServices() || 'AI Chatbot';
+
+  document.getElementById('progressCard').classList.add('visible');
+  document.getElementById('resultsCard').classList.remove('visible');
+  document.getElementById('genBtn').disabled = true;
+  setProgress(20, 'Lead analyze kar raha hun...');
+
+  try {
+    await sleep(400);
+    setProgress(50, 'Personalized email likh raha hun...');
+
+    const prompt = `Write a cold outreach email for this lead:
+
+${leadInfo}
+
+Details:
+- Sender: Mahi, Founder of AutoMind Agency
+- Services we offer: ${services}
+- Email tone: ${tone}
+- Target: USA e-commerce business
+- Goal: Get them on a free discovery call or demo
+
+Return ONLY this JSON:
+{
+  "business_name": "extracted business name",
+  "contact_name": "contact name or empty string",
+  "niche": "their niche",
+  "subject_line": "compelling subject line (max 60 chars)",
+  "email_body": "full email body with greeting, personalized opening, pain point, solution pitch, CTA, and signature from Mahi — AutoMind Agency",
+  "follow_up_subject": "follow up email subject line",
+  "follow_up_body": "short 3-4 line follow up email",
+  "best_send_time": "best day and time to send (USA timezone)",
+  "personalization_tip": "one specific tip to make this email even more personal"
+}`;
+
+    const raw = await callGroq(prompt);
+    setProgress(85, 'Email ready kar raha hun...');
+
+    let parsed;
+    try {
+      const match = raw.match(/\{[\s\S]*\}/);
+      parsed = JSON.parse(match[0]);
+    } catch(e) { throw new Error('Email parse nahi hua — dobara try karo'); }
+
+    currentEmail = parsed;
+    setProgress(100, '✅ Email ready!');
+    await sleep(300);
+
+    renderEmail(parsed);
+    document.getElementById('progressCard').classList.remove('visible');
+    document.getElementById('resultsCard').classList.add('visible');
+    document.getElementById('resultsCard').scrollIntoView({ behavior: 'smooth' });
+
+  } catch(err) {
+    setProgress(0, '❌ Error: ' + err.message);
+    showToast('❌ ' + err.message, true);
+  } finally {
+    document.getElementById('genBtn').disabled = false;
+  }
+}
+
+function renderEmail(e) {
+  document.getElementById('resultsCount').textContent = `✅ Email Ready — ${e.business_name}`;
+  document.getElementById('emailResult').innerHTML = `
+    <div class="email-card">
+      <div class="email-header">
+        <div class="email-to">To: ${e.business_name}</div>
+        <div class="email-niche">${e.niche}</div>
+      </div>
+
+      <div class="email-section">
+        <div class="email-section-label">📬 Subject Line</div>
+        <div class="subject-box">${e.subject_line}</div>
+      </div>
+
+      <div class="email-section">
+        <div class="email-section-label">📝 Email Body</div>
+        <div class="body-box">${e.email_body}</div>
+      </div>
+
+      <div class="email-actions">
+        <button class="action-btn primary" onclick="copyEmail()">📋 Copy Email</button>
+        <button class="action-btn" onclick="copySubject()">📌 Copy Subject</button>
+      </div>
+
+      <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px;">
+        <div class="email-section-label">🔄 Follow-Up Email</div>
+        <div class="subject-box" style="margin-bottom:8px;font-size:12px;">${e.follow_up_subject}</div>
+        <div class="body-box" style="max-height:120px;">${e.follow_up_body}</div>
+        <button class="action-btn green" style="width:100%;margin-top:8px;" onclick="copyFollowUp()">📋 Follow-Up Copy Karo</button>
+      </div>
+
+      <div style="margin-top:14px;background:rgba(255,107,53,0.06);border:1px solid rgba(255,107,53,0.15);border-radius:10px;padding:12px;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--accent2);font-weight:700;margin-bottom:6px;font-family:'Space Mono',monospace;">⏰ Best Send Time</div>
+        <div style="font-size:13px;color:#ff9966;font-weight:600;">${e.best_send_time}</div>
+      </div>
+
+      <div style="margin-top:10px;background:rgba(79,142,255,0.06);border:1px solid rgba(79,142,255,0.15);border-radius:10px;padding:12px;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--accent);font-weight:700;margin-bottom:6px;font-family:'Space Mono',monospace;">💡 Personalization Tip</div>
+        <div style="font-size:12px;color:#99bbff;line-height:1.6;">${e.personalization_tip}</div>
+      </div>
+    </div>
+  `;
+}
+
+async function generateBatch() {
+  const batchText = document.getElementById('batchData').value.trim();
+  if (!batchText) { showToast('❌ Leads paste karo pehle!', true); return; }
+
+  const lines = batchText.split('\n').filter(l => l.trim());
+  if (lines.length === 0) return;
+
+  const tone = getTone();
+  const services = getServices() || 'AI Chatbot';
+  const batchResults = document.getElementById('batchResults');
+  batchResults.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:20px;">⚡ Emails generate ho rahi hain...</div>';
+
+  const prompt = `Write cold outreach emails for these ${lines.length} e-commerce leads:
+
+${lines.map((l, i) => `${i+1}. ${l}`).join('\n')}
+
+Sender: Mahi, Founder of AutoMind Agency
+Services: ${services}
+Tone: ${tone}
+Goal: Get a free demo call
+
+Return ONLY a JSON array:
+[
+  {
+    "business": "business name",
+    "subject": "subject line",
+    "body": "short 5-6 line email body"
+  }
+]`;
+
+  try {
+    const raw = await callGroq(prompt);
+    const match = raw.match(/\[[\s\S]*\]/);
+    const emails = JSON.parse(match[0]);
+
+    batchResults.innerHTML = emails.map((e, i) => `
+      <div class="email-card" style="margin-bottom:10px;">
+        <div class="email-header">
+          <div class="email-to">${e.business}</div>
+          <div class="email-niche">#${i+1}</div>
+        </div>
+        <div class="email-section">
+          <div class="email-section-label">Subject</div>
+          <div class="subject-box" style="font-size:12px;">${e.subject}</div>
+        </div>
+        <div class="email-section" style="margin-top:8px;">
+          <div class="email-section-label">Body</div>
+          <div class="body-box">${e.body}</div>
+        </div>
+        <button class="action-btn primary" style="width:100%;margin-top:10px;" onclick="copyText('${encodeURIComponent('Subject: ' + e.subject + '\n\n' + e.body)}')">📋 Copy</button>
+      </div>
+    `).join('');
+
+    showToast(`✅ ${emails.length} emails ready!`);
+  } catch(err) {
+    batchResults.innerHTML = `<div style="color:#ff4466;font-size:12px;text-align:center;">❌ ${err.message}</div>`;
+    showToast('❌ ' + err.message, true);
+  }
+}
+
+function copyEmail() {
+  if (!currentEmail) return;
+  const text = `Subject: ${currentEmail.subject_line}\n\n${currentEmail.email_body}`;
+  copyToClipboard(text);
+  showToast('✅ Email copy ho gayi!');
+}
+
+function copySubject() {
+  if (!currentEmail) return;
+  copyToClipboard(currentEmail.subject_line);
+  showToast('✅ Subject copy ho gayi!');
+}
+
+function copyFollowUp() {
+  if (!currentEmail) return;
+  const text = `Subject: ${currentEmail.follow_up_subject}\n\n${currentEmail.follow_up_body}`;
+  copyToClipboard(text);
+  showToast('✅ Follow-up copy ho gayi!');
+}
+
+function copyText(encoded) {
+  copyToClipboard(decodeURIComponent(encoded));
+  showToast('✅ Copy ho gayi!');
+}
+
+function copyToClipboard(text) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+  } else { fallbackCopy(text); }
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text; document.body.appendChild(ta);
+  ta.select(); document.execCommand('copy');
+  document.body.removeChild(ta);
+}
+
+function setProgress(pct, text) {
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressText').textContent = text;
+}
+
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (isError ? ' error' : '') + ' show';
+  setTimeout(() => t.className = 'toast', 2500);
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+</body>
+</html>
